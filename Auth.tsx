@@ -1,15 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, User } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, GraduationCap, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Loader2, Mail, Lock, User as UserIcon, ArrowLeft, Shield } from "lucide-react";
 import sigeaLogo from "@/assets/sigea-logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const { user, signIn, signUp } = useAuth();
@@ -17,68 +19,73 @@ const Auth = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("signin");
+  const [activeTab, setActiveTab] = useState("signin");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [signInData, setSignInData] = useState({
     email: "",
     password: "",
   });
-
-  const [signUpData, setSignUpData] = useState({
+  const [signUpData, setSignUpData] = useState<{
+    email: string;
+    password: string;
+    confirmPassword: string;
+    full_name: string;
+    role: User['role'];
+  }>({
     email: "",
     password: "",
     confirmPassword: "",
     full_name: "",
     role: "student",
   });
-
   const [forgotEmail, setForgotEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
   useEffect(() => {
-    if (user) {
-      const roleRoutes = {
-        admin: '/admin',
-        teacher: '/teacher',
-        student: '/student',
-        kitchen: '/kitchen',
-        library: '/library'
-      };
-      
-      const from = location.state?.from?.pathname;
-      const targetRoute = from || roleRoutes[user.role as keyof typeof roleRoutes] || '/';
-      
-      navigate(targetRoute, { replace: true });
+    if (location.state?.role) {
+      setSignUpData(prev => ({ ...prev, role: location.state.role }));
     }
-  }, [user, navigate, location]);
+  }, [location.state]);
+
+  useEffect(() => {
+    // Lida com o retorno do link de redefinição de senha
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+        toast({
+          title: "Redefina sua senha",
+          description: "Você agora pode definir uma nova senha para sua conta.",
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [toast]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
+    
     const { error } = await signIn(signInData.email, signInData.password);
-
+    
     if (error) {
       let errorMessage = error.message;
-      
       if (error.message.includes('Invalid login credentials')) {
-        errorMessage = 'Email ou senha incorretos. Verifique seus dados e tente novamente.';
-      } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = 'Por favor, confirme seu email antes de fazer login.';
+        errorMessage = "Email ou senha inválidos. Por favor, verifique e tente novamente.";
       }
-      
       toast({
-        title: "Erro ao fazer login",
+        title: "Erro ao entrar",
         description: errorMessage,
         variant: "destructive",
       });
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (signUpData.password !== signUpData.confirmPassword) {
       toast({
         title: "Erro no cadastro",
@@ -87,365 +94,204 @@ const Auth = () => {
       });
       return;
     }
-
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(signUpData.email)) {
+      toast({
+        title: "Email inválido",
+        description: "Por favor, insira um endereço de e-mail válido.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (signUpData.password.length < 6) {
       toast({
-        title: "Erro no cadastro",
+        title: "Senha muito curta",
         description: "A senha deve ter no mínimo 6 caracteres.",
         variant: "destructive",
       });
       return;
     }
-
     setLoading(true);
-
-    const { error } = await signUp(signUpData.email, signUpData.password, {
-      full_name: signUpData.full_name,
-      role: signUpData.role
-    });
-
+    const { error } = await signUp(signUpData.email, signUpData.password, signUpData.full_name, signUpData.role);
     if (error) {
-      if (error.message.includes("already registered")) {
-        toast({
-          title: "Email já cadastrado",
-          description: "Este email já está registrado. Faça login ou use outro email.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Erro no cadastro",
-          description: error.message,
-          variant: "destructive",
-        });
-      }
-      setLoading(false);
+      toast({
+        title: "Erro ao cadastrar",
+        description: error.message,
+        variant: "destructive",
+      });
     } else {
       toast({
         title: "Cadastro realizado!",
-        description: "Bem-vindo ao SIGEA! Redirecionando...",
+        description: "Sua conta foi criada com sucesso. Agora você já pode fazer o login.",
       });
+      setActiveTab("signin");
     }
+    setLoading(false);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    try {
-      toast({
-        title: "Email enviado!",
-        description: "Verifique sua caixa de entrada para redefinir sua senha.",
-      });
-      setShowForgotPassword(false);
-      setForgotEmail("");
-    } catch (error: any) {
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+    if (error) {
       toast({
         title: "Erro",
-        description: "Não foi possível enviar o email. Tente novamente.",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
+    } else {
+      toast({
+        title: "Verifique seu e-mail",
+        description: "Um link para redefinir sua senha foi enviado.",
+      });
+      setShowForgotPassword(false);
     }
+    setLoading(false);
   };
 
-  if (showForgotPassword) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4 animate-slide-in">
-        <Card className="w-full max-w-md glass border-primary/20 shadow-neon">
-          <CardHeader className="text-center space-y-4">
-            <div className="flex justify-center">
-              <div className="logo-container">
-                <img src={sigeaLogo} alt="SIGEA Logo" className="w-24 h-24 object-contain logo-professional" />
+  const handlePasswordRecovery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmNewPassword) {
+      toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Erro", description: "A nova senha deve ter no mínimo 6 caracteres.", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      toast({ title: "Erro ao redefinir senha", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Senha redefinida!", description: "Sua senha foi alterada com sucesso. Você já pode fazer login." });
+      setIsPasswordRecovery(false);
+      setNewPassword("");
+      setConfirmNewPassword("");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-mesh flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-3xl"></div>
+      <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-float"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
+
+      <Card className="w-full max-w-md space-y-4 relative z-10 glass border-border/50 backdrop-blur-xl shadow-strong hover-lift">
+        <Button variant="ghost" size="sm" className="absolute top-4 left-4" onClick={() => navigate('/login')}>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar
+        </Button>
+        <CardHeader className="text-center pt-16">
+          <div className="flex justify-center mb-4">
+            <img src={sigeaLogo} alt="SIGEA" className="w-24 h-24 object-contain" />
+          </div>
+          <CardTitle className="text-2xl">
+            {isPasswordRecovery ? "Crie uma Nova Senha" : showForgotPassword ? "Recuperar Senha" : "Acessar Conta"}
+          </CardTitle>
+          <CardDescription>
+            {isPasswordRecovery ? "Digite sua nova senha abaixo." : showForgotPassword ? "Insira seu e-mail para receber o link de recuperação." : "Entre ou crie uma nova conta para acessar o SIGEA."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isPasswordRecovery ? (
+            <form onSubmit={handlePasswordRecovery} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nova Senha</Label>
+                <Input id="new-password" type="password" placeholder="Mínimo 6 caracteres" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
               </div>
-            </div>
-            <div>
-              <CardTitle className="text-2xl bg-gradient-hero bg-clip-text text-transparent">
-                Esqueceu sua senha?
-              </CardTitle>
-              <CardDescription>
-                Digite seu email para receber instruções de recuperação
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-new-password">Confirmar Nova Senha</Label>
+                <Input id="confirm-new-password" type="password" placeholder="Repita a nova senha" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} required />
+              </div>
+              <Button type="submit" className="w-full bg-gradient-primary hover:shadow-neon" disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shield className="mr-2 h-4 w-4" />}
+                Salvar Nova Senha
+              </Button>
+            </form>
+          ) : showForgotPassword ? (
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="forgot-email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="forgot-email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    className="pl-10 smooth-transition"
-                    required
-                  />
-                </div>
+                <Input id="forgot-email" type="email" placeholder="seu@email.com" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required />
               </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-primary hover:shadow-neon smooth-transition"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enviando...
-                  </>
-                ) : (
-                  "Enviar Email de Recuperação"
-                )}
+              <Button type="submit" className="w-full bg-gradient-primary hover:shadow-neon" disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                Enviar Link
               </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => setShowForgotPassword(false)}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para login
-              </Button>
+              <Button variant="link" className="w-full" onClick={() => setShowForgotPassword(false)}>Voltar para o login</Button>
             </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 animate-slide-in">
-      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-      <Card className="w-full max-w-md glass border-primary/30 hover-glow relative z-10 smooth-transition">
-        <CardHeader className="space-y-4 text-center">
-          <div className="flex justify-center">
-            <div className="logo-container">
-              <img src={sigeaLogo} alt="SIGEA Logo" className="w-32 h-32 object-contain logo-professional" />
-            </div>
-          </div>
-          <div>
-            <CardTitle className="text-4xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              SIGEA
-            </CardTitle>
-            <CardDescription className="mt-2 text-base">Gestão Escolar & Culinária</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 p-1 bg-muted/50">
-              <TabsTrigger value="signin" className="smooth-transition data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                Entrar
-              </TabsTrigger>
-              <TabsTrigger value="signup" className="smooth-transition data-[state=active]:bg-gradient-primary data-[state=active]:text-primary-foreground">
-                Cadastrar
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="signin" className="space-y-6">
-              <form onSubmit={handleSignIn} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email" className="text-sm font-medium">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signin-email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={signInData.email}
-                      onChange={(e) =>
-                        setSignInData({ ...signInData, email: e.target.value })
-                      }
-                      className="pl-10 smooth-transition focus:border-primary focus:ring-primary"
-                      required
-                    />
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Entrar</TabsTrigger>
+                <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              </TabsList>
+              <TabsContent value="signin">
+                <form onSubmit={handleSignIn} className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" placeholder="seu@email.com" value={signInData.email} onChange={(e) => setSignInData({ ...signInData, email: e.target.value })} required />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password" className="text-sm font-medium">Senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={signInData.password}
-                      onChange={(e) =>
-                        setSignInData({ ...signInData, password: e.target.value })
-                      }
-                      className="pl-10 smooth-transition focus:border-primary focus:ring-primary"
-                      required
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <Input id="password" type="password" placeholder="********" value={signInData.password} onChange={(e) => setSignInData({ ...signInData, password: e.target.value })} required />
                   </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="link"
-                  className="text-sm text-primary hover:text-primary/80 p-0 h-auto"
-                  onClick={() => setShowForgotPassword(true)}
-                >
-                  Esqueceu sua senha?
-                </Button>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-primary hover:shadow-neon smooth-transition hover-lift text-primary-foreground font-semibold"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Entrando...
-                    </>
-                  ) : (
-                    <>
-                      <GraduationCap className="mr-2 h-5 w-5" />
-                      Entrar no Sistema
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => navigate('/')}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Voltar
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup" className="space-y-6">
-              <form onSubmit={handleSignUp} className="space-y-5">
-                <Alert className="border-primary/30 bg-primary/5">
-                  <AlertDescription className="text-sm">
-                    Escolha o tipo de conta que você precisa. Após o cadastro, você será redirecionado para a área correspondente.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name" className="text-sm font-medium">Nome Completo</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="Seu nome completo"
-                      value={signUpData.full_name}
-                      onChange={(e) =>
-                        setSignUpData({ ...signUpData, full_name: e.target.value })
-                      }
-                      className="pl-10 smooth-transition focus:border-primary focus:ring-primary"
-                      required
-                    />
+                  <Button type="submit" className="w-full bg-gradient-primary hover:shadow-neon" disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Entrar
+                  </Button>
+                  <Button variant="link" size="sm" className="w-full" onClick={() => setShowForgotPassword(true)}>
+                    Esqueceu sua senha?
+                  </Button>
+                </form>
+              </TabsContent>
+              <TabsContent value="signup">
+                <form onSubmit={handleSignUp} className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Nome Completo</Label>
+                    <Input id="signup-name" placeholder="Seu Nome Completo" value={signUpData.full_name} onChange={(e) => setSignUpData({ ...signUpData, full_name: e.target.value })} required />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-sm font-medium">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="seu@email.com"
-                      value={signUpData.email}
-                      onChange={(e) =>
-                        setSignUpData({ ...signUpData, email: e.target.value })
-                      }
-                      className="pl-10 smooth-transition focus:border-primary focus:ring-primary"
-                      required
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input id="signup-email" type="email" placeholder="seu@email.com" value={signUpData.email} onChange={(e) => setSignUpData({ ...signUpData, email: e.target.value })} required />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-role" className="text-sm font-medium">Tipo de Conta</Label>
-                  <select
-                    id="signup-role"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background smooth-transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus:border-primary"
-                    value={signUpData.role}
-                    onChange={(e) =>
-                      setSignUpData({ ...signUpData, role: e.target.value })
-                    }
-                    required
-                  >
-                    <option value="student">🎓 Estudante</option>
-                    <option value="teacher">👨‍🏫 Professor</option>
-                    <option value="admin">⚙️ Administrador</option>
-                    <option value="kitchen">🍳 Cozinha</option>
-                    <option value="library">📚 Biblioteca</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-sm font-medium">Senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="Mínimo 6 caracteres"
-                      value={signUpData.password}
-                      onChange={(e) =>
-                        setSignUpData({ ...signUpData, password: e.target.value })
-                      }
-                      className="pl-10 smooth-transition focus:border-primary focus:ring-primary"
-                      required
-                      minLength={6}
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Senha</Label>
+                    <Input id="signup-password" type="password" placeholder="Mínimo 6 caracteres" value={signUpData.password} onChange={(e) => setSignUpData({ ...signUpData, password: e.target.value })} required />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirm" className="text-sm font-medium">Confirmar Senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-confirm"
-                      type="password"
-                      placeholder="Digite a senha novamente"
-                      value={signUpData.confirmPassword}
-                      onChange={(e) =>
-                        setSignUpData({ ...signUpData, confirmPassword: e.target.value })
-                      }
-                      className="pl-10 smooth-transition focus:border-primary focus:ring-primary"
-                      required
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password">Confirmar Senha</Label>
+                    <Input id="signup-confirm-password" type="password" placeholder="Repita a senha" value={signUpData.confirmPassword} onChange={(e) => setSignUpData({ ...signUpData, confirmPassword: e.target.value })} required />
                   </div>
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-accent hover:shadow-neon smooth-transition hover-lift text-accent-foreground font-semibold"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Cadastrando...
-                    </>
-                  ) : (
-                    <>
-                      <GraduationCap className="mr-2 h-5 w-5" />
-                      Criar Conta
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => navigate('/')}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Voltar
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-role">Tipo de Conta</Label>
+                    <Select 
+                      value={signUpData.role} 
+                      onValueChange={(value: User['role']) => setSignUpData({ ...signUpData, role: value })}
+                      disabled={!!location.state?.role}
+                    >
+                      <SelectTrigger id="signup-role">
+                        <SelectValue placeholder="Selecione o seu perfil" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">Estudante</SelectItem>
+                        <SelectItem value="teacher">Professor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit" className="w-full bg-gradient-accent hover:shadow-neon-secondary" disabled={loading}>
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Criar Conta
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          )}
         </CardContent>
       </Card>
     </div>

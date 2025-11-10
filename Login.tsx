@@ -7,7 +7,7 @@ import sigeaLogo from "@/assets/sigea-logo.png";
 const Login = () => {
   const navigate = useNavigate();
 
-  const goToAuth = () => navigate('/auth');
+  const goToAuth = (role: string) => navigate('/auth', { state: { role } });
 
   return (
     <div className="min-h-screen bg-gradient-mesh flex items-center justify-center p-4 relative overflow-hidden">
@@ -40,7 +40,7 @@ const Login = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             <Button 
-              onClick={goToAuth} 
+              onClick={() => goToAuth('admin')} 
               className="w-full h-16 bg-gradient-primary hover:shadow-neon smooth-transition text-lg font-medium group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-secondary opacity-0 group-hover:opacity-100 smooth-transition"></div>
@@ -52,7 +52,7 @@ const Login = () => {
             </Button>
             
             <Button 
-              onClick={goToAuth} 
+              onClick={() => goToAuth('teacher')} 
               variant="outline"
               className="w-full h-16 border-accent/50 hover:bg-accent/10 hover:border-accent hover:shadow-neon-secondary smooth-transition text-lg font-medium group"
             >
@@ -64,7 +64,7 @@ const Login = () => {
             </Button>
             
             <Button 
-              onClick={goToAuth} 
+              onClick={() => goToAuth('student')} 
               variant="outline"
               className="w-full h-16 border-secondary/50 hover:bg-secondary/10 hover:border-secondary hover:shadow-neon smooth-transition text-lg font-medium group"
             >
@@ -76,7 +76,7 @@ const Login = () => {
             </Button>
 
             <Button 
-              onClick={goToAuth} 
+              onClick={() => goToAuth('kitchen')} 
               variant="outline"
               className="w-full h-16 border-[hsl(var(--orange))]/50 hover:bg-[hsl(var(--orange))]/10 hover:border-[hsl(var(--orange))] hover:shadow-neon-accent smooth-transition text-lg font-medium group"
             >

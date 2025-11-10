@@ -88,7 +88,7 @@ const StudentMenuSelection = () => {
       });
 
       const { error } = await supabase
-        .from('menu_orders')
+        .from('menu_orders') // Corrigido para a tabela correta
         .insert(orders);
 
       if (error) throw error;

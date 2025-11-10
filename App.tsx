@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,7 +11,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import StudentPortal from "@/pages/StudentPortal";
 import TeacherDashboard from "@/pages/TeacherDashboard";
 import KitchenDashboard from "@/pages/KitchenDashboard";
-import NotFound from "./pages/NotFound";
+import NotFound from "@/pages/NotFound";
 import Auth from "@/components/Auth";
 import Profile from "@/pages/Profile";
 import SIGEAAssistant from "@/pages/SIGEAAssistant";
@@ -18,36 +19,36 @@ import SIGEAAssistant from "@/pages/SIGEAAssistant";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { user, loading } = useAuth();
+  const isAuthenticated = !!user;
 
   if (loading) {
-    return null; // Initial splash handled by pages
+    return <div className="flex h-screen w-screen items-center justify-center" />;
   }
 
   if (!isAuthenticated) {
     return (
       <Routes>
         <Route path="/auth" element={<Auth />} />
-        <Route path="*" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
   }
 
   return (
     <Routes>
-      <Route path="/" element={
-        user?.role === 'admin' ? <AdminDashboard /> :
-        user?.role === 'teacher' ? <TeacherDashboard /> :
-        user?.role === 'kitchen' ? <KitchenDashboard /> :
-        <StudentPortal />
-      } />
-      <Route path="/auth" element={<Navigate to="/" replace />} />
+      {/* A rota principal agora aguarda o redirecionamento do useAuth */}
+      <Route path="/" element={<div className="flex h-screen w-screen items-center justify-center" />} />
+      <Route path="/student/*" element={<StudentPortal />} />
+      <Route path="/admin/*" element={<AdminDashboard />} />
+      <Route path="/teacher/*" element={<TeacherDashboard />} />
+      <Route path="/kitchen/*" element={<KitchenDashboard />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/sigea-assistant" element={<SIGEAAssistant />} />
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/teacher" element={<TeacherDashboard />} />
-      <Route path="/student" element={<StudentPortal />} />
-      <Route path="/kitchen" element={<KitchenDashboard />} />
+      {/* Redireciona usuários logados que tentam acessar /login ou /auth */}
+      <Route path="/auth" element={<Navigate to="/" replace />} />
+      <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -57,11 +58,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
         <BrowserRouter>
           <AppContent />
         </BrowserRouter>
+        <Toaster />
+        <Sonner />
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
