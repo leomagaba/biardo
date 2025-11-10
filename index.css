@@ -1,0 +1,254 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Tailwind Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Cores exatas da nova logo SIGEA - Lavender blue, Golden, Dark Navy */
+    --background: 220 25% 97%;
+    --foreground: 220 30% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 12%;
+    
+    /* Primary - Azul lavanda vibrante do chapéu e livro */
+    --primary: 230 65% 68%;
+    --primary-foreground: 220 45% 10%;
+    --primary-hover: 230 70% 72%;
+    --primary-glow: 230 75% 75%;
+    --primary-dark: 230 60% 60%;
+    
+    /* Secondary - Navy profundo do fundo da logo */
+    --secondary: 220 45% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-glow: 220 50% 25%;
+    --secondary-dark: 220 50% 10%;
+    
+    /* Accent - Dourado brilhante dos ornamentos */
+    --accent: 42 88% 58%;
+    --accent-foreground: 220 45% 10%;
+    --accent-glow: 42 95% 65%;
+    
+    /* Orange - Tom laranja dos talheres */
+    --orange: 28 90% 58%;
+    --orange-foreground: 220 45% 10%;
+    
+    --muted: 220 20% 94%;
+    --muted-foreground: 220 15% 48%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 25% 90%;
+    --input: 220 25% 90%;
+    --ring: 230 65% 68%;
+    --radius: 0.75rem;
+    
+    --chart-1: 230 65% 68%;
+    --chart-2: 42 88% 58%;
+    --chart-3: 28 90% 58%;
+    --chart-4: 220 45% 15%;
+    --chart-5: 230 75% 75%;
+
+    /* Gradientes premium baseados na nova logo */
+    --gradient-primary: linear-gradient(135deg, hsl(230, 65%, 68%) 0%, hsl(230, 75%, 75%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(220, 45%, 15%) 0%, hsl(220, 50%, 25%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(42, 88%, 58%) 0%, hsl(28, 90%, 58%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220, 45%, 15%) 0%, hsl(230, 65%, 68%) 50%, hsl(42, 88%, 58%) 100%);
+    --gradient-card: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.92) 100%);
+    --gradient-mesh: radial-gradient(at 40% 20%, hsla(230, 65%, 68%, 0.15) 0px, transparent 50%), radial-gradient(at 80% 0%, hsla(42, 88%, 58%, 0.12) 0px, transparent 50%), radial-gradient(at 0% 50%, hsla(220, 45%, 15%, 0.08) 0px, transparent 50%);
+    
+    /* Sombras premium com glow da logo */
+    --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.06);
+    --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.1);
+    --shadow-strong: 0 8px 40px rgba(0, 0, 0, 0.15);
+    --shadow-neon: 0 0 35px hsla(230, 65%, 68%, 0.6), 0 0 70px hsla(230, 65%, 68%, 0.3);
+    --shadow-neon-secondary: 0 0 25px hsla(42, 88%, 58%, 0.5);
+    --shadow-neon-accent: 0 0 25px hsla(28, 90%, 58%, 0.4);
+    --shadow-glow: 0 5px 30px hsla(230, 65%, 68%, 0.25);
+  }
+
+  .dark {
+    /* Dark mode premium - cores exatas da logo */
+    --background: 220 50% 6%;
+    --foreground: 0 0% 98%;
+    --card: 220 45% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 220 45% 10%;
+    --popover-foreground: 0 0% 98%;
+    
+    /* Primary - Lavanda vibrante iluminado */
+    --primary: 230 70% 72%;
+    --primary-foreground: 220 50% 6%;
+    --primary-hover: 230 75% 78%;
+    --primary-glow: 230 80% 82%;
+    --primary-dark: 230 65% 65%;
+    
+    /* Secondary - Navy escuro refinado */
+    --secondary: 220 40% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-glow: 220 45% 28%;
+    --secondary-dark: 220 50% 12%;
+    
+    /* Accent - Dourado luminoso */
+    --accent: 42 95% 62%;
+    --accent-foreground: 220 50% 6%;
+    --accent-glow: 42 100% 70%;
+    
+    /* Orange - Laranja vibrante */
+    --orange: 28 95% 62%;
+    --orange-foreground: 220 50% 6%;
+    
+    --muted: 220 40% 15%;
+    --muted-foreground: 220 20% 72%;
+    --destructive: 0 70% 62%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 40% 18%;
+    --input: 220 40% 18%;
+    --ring: 230 70% 72%;
+    
+    --chart-1: 230 70% 72%;
+    --chart-2: 42 95% 62%;
+    --chart-3: 28 95% 62%;
+    --chart-4: 220 40% 18%;
+    --chart-5: 230 80% 82%;
+
+    /* Gradientes dark premium com glow */
+    --gradient-primary: linear-gradient(135deg, hsl(220, 50%, 8%) 0%, hsl(230, 70%, 72%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(220, 40%, 18%) 0%, hsl(230, 80%, 82%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(42, 95%, 62%) 0%, hsl(28, 95%, 62%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220, 50%, 8%) 0%, hsl(230, 70%, 72%) 50%, hsl(42, 95%, 62%) 100%);
+    --gradient-card: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+    --gradient-mesh: radial-gradient(at 40% 20%, hsla(230, 70%, 72%, 0.2) 0px, transparent 50%), radial-gradient(at 80% 0%, hsla(42, 95%, 62%, 0.15) 0px, transparent 50%), radial-gradient(at 0% 50%, hsla(220, 50%, 8%, 0.4) 0px, transparent 50%);
+    
+    /* Sombras neon intensas para dark mode */
+    --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.5);
+    --shadow-medium: 0 4px 24px rgba(0, 0, 0, 0.6);
+    --shadow-strong: 0 8px 48px rgba(0, 0, 0, 0.7);
+    --shadow-neon: 0 0 45px hsla(230, 70%, 72%, 0.7), 0 0 90px hsla(230, 70%, 72%, 0.4);
+    --shadow-neon-secondary: 0 0 35px hsla(42, 95%, 62%, 0.6);
+    --shadow-neon-accent: 0 0 35px hsla(28, 95%, 62%, 0.5);
+    --shadow-glow: 0 6px 40px hsla(230, 70%, 72%, 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .glass {
+    background: var(--gradient-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-glow);
+  }
+
+  .hover-lift {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: var(--shadow-neon);
+  }
+
+  .hover-glow {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .hover-glow:hover {
+    box-shadow: var(--shadow-neon);
+    border-color: hsl(var(--primary));
+  }
+
+  .smooth-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Professional Logo Styling */
+  .logo-professional {
+    filter: drop-shadow(0 4px 20px hsla(230, 65%, 68%, 0.4))
+            drop-shadow(0 0 40px hsla(42, 88%, 58%, 0.2));
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    image-rendering: -webkit-optimize-contrast; /* Edge/Chrome support */
+  }
+
+  .logo-professional:hover {
+    filter: drop-shadow(0 8px 30px hsla(230, 65%, 68%, 0.6))
+            drop-shadow(0 0 60px hsla(42, 88%, 58%, 0.4));
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  .logo-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .logo-container::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    background: radial-gradient(circle at center, 
+      hsla(230, 65%, 68%, 0.15) 0%, 
+      hsla(42, 88%, 58%, 0.1) 50%, 
+      transparent 100%);
+    border-radius: 50%;
+    animation: pulse-glow 3s ease-in-out infinite;
+    z-index: -1;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+}
